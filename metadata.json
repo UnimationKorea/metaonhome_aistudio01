@@ -1,0 +1,7 @@
+{
+  "name": "MetaOn Global - AI & Metaverse Learning Platform",
+  "description": "A premium bilingual introduction website for MetaOn, featuring a high-end tech aesthetic and an integrated CMS for content management.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
