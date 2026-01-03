@@ -3,20 +3,40 @@ import React, { useState } from 'react';
 import Navbar from '../components/Navbar';
 import BilingualDisplay from '../components/BilingualDisplay';
 import { store } from '../services/store';
-import { Mail, Globe, MapPin, Zap } from 'lucide-react';
+import { Mail, Globe, MapPin, Zap, AlertCircle } from 'lucide-react';
 
 const Contact: React.FC = () => {
   const [inquiry, setInquiry] = useState({ name: '', company: '', role: '', email: '', country: '', message: '' });
-  const [status, setStatus] = useState<'idle' | 'sending' | 'success'>('idle');
+  const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('sending');
-    setTimeout(() => {
-      store.addInquiry({ ...inquiry, role: inquiry.role || 'N/A' });
-      setStatus('success');
-      setInquiry({ name: '', company: '', role: '', email: '', country: '', message: '' });
-    }, 1000);
+
+    try {
+      const response = await fetch('https://formspree.io/f/xeeolglw', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          ...inquiry,
+          _subject: `MetaOn Global Inquiry from ${inquiry.name}`
+        })
+      });
+
+      if (response.ok) {
+        store.addInquiry({ ...inquiry, role: inquiry.role || 'N/A' });
+        setStatus('success');
+        setInquiry({ name: '', company: '', role: '', email: '', country: '', message: '' });
+      } else {
+        setStatus('error');
+      }
+    } catch (error) {
+      console.error('Form submission error:', error);
+      setStatus('error');
+    }
   };
 
   return (
@@ -63,25 +83,40 @@ const Contact: React.FC = () => {
                   <p className="text-gray-400">Thank you for reaching out. We will contact you shortly.</p>
                   <button onClick={() => setStatus('idle')} className="mt-12 text-purple-400 font-bold hover:underline">Send another message</button>
                 </div>
+              ) : status === 'error' ? (
+                <div className="h-full flex flex-col items-center justify-center text-center py-20 animate-in shake-in duration-500">
+                   <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mb-8">
+                    <AlertCircle size={40} />
+                  </div>
+                  <h3 className="text-3xl font-bold mb-4 text-red-400">Submission Error</h3>
+                  <p className="text-gray-400">We couldn't send your message. Please try again.</p>
+                  <button onClick={() => setStatus('idle')} className="mt-12 text-purple-400 font-bold hover:underline">Try again</button>
+                </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-gray-500 uppercase">Name</label>
-                      <input required className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-purple-500 outline-none" placeholder="Full Name" value={inquiry.name} onChange={e => setInquiry({...inquiry, name: e.target.value})} />
+                      <input required name="name" className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-purple-500 outline-none" placeholder="Full Name" value={inquiry.name} onChange={e => setInquiry({...inquiry, name: e.target.value})} />
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-gray-500 uppercase">Email</label>
-                      <input required type="email" className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-purple-500 outline-none" placeholder="Email Address" value={inquiry.email} onChange={e => setInquiry({...inquiry, email: e.target.value})} />
+                      <input required type="email" name="email" className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-purple-500 outline-none" placeholder="Email Address" value={inquiry.email} onChange={e => setInquiry({...inquiry, email: e.target.value})} />
+                    </div>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-500 uppercase">Company</label>
+                      <input name="company" className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-purple-500 outline-none" placeholder="Organization" value={inquiry.company} onChange={e => setInquiry({...inquiry, company: e.target.value})} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-500 uppercase">Country</label>
+                      <input name="country" className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-purple-500 outline-none" placeholder="Country" value={inquiry.country} onChange={e => setInquiry({...inquiry, country: e.target.value})} />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-500 uppercase">Company</label>
-                    <input className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-purple-500 outline-none" placeholder="Company / Organization Name" value={inquiry.company} onChange={e => setInquiry({...inquiry, company: e.target.value})} />
-                  </div>
-                  <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-500 uppercase">Message</label>
-                    <textarea required rows={5} className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-purple-500 outline-none resize-none" placeholder="How can we help your business?" value={inquiry.message} onChange={e => setInquiry({...inquiry, message: e.target.value})}></textarea>
+                    <textarea required name="message" rows={5} className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-purple-500 outline-none resize-none" placeholder="How can we help your business?" value={inquiry.message} onChange={e => setInquiry({...inquiry, message: e.target.value})}></textarea>
                   </div>
                   <button disabled={status === 'sending'} className="w-full bg-purple-600 hover:bg-purple-700 py-5 rounded-2xl font-bold text-lg shadow-xl shadow-purple-600/20 transition-all disabled:opacity-50">
                     {status === 'sending' ? 'Sending...' : 'Send Message'}

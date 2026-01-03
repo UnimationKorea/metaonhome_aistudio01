@@ -10,7 +10,7 @@ const Home: React.FC = () => {
   const [sections, setSections] = useState<SiteSection[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [inquiry, setInquiry] = useState({ name: '', company: '', role: '', email: '', country: '', message: '' });
-  const [status, setStatus] = useState<'idle' | 'sending' | 'success'>('idle');
+  const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
 
   useEffect(() => {
     setSections(store.getSections());
@@ -21,14 +21,33 @@ const Home: React.FC = () => {
   const about = sections.find(s => s.id === 'about');
   const features = sections.find(s => s.id === 'features');
 
-  const handleSubmitInquiry = (e: React.FormEvent) => {
+  const handleSubmitInquiry = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('sending');
-    setTimeout(() => {
-      store.addInquiry({ ...inquiry, role: inquiry.role || 'N/A' });
-      setStatus('success');
-      setInquiry({ name: '', company: '', role: '', email: '', country: '', message: '' });
-    }, 1000);
+
+    try {
+      // 1. Formspree API로 전송
+      const response = await fetch('https://formspree.io/f/xeeolglw', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(inquiry)
+      });
+
+      if (response.ok) {
+        // 2. 내부 로컬 스토어에도 기록 (CMS용)
+        store.addInquiry({ ...inquiry, role: inquiry.role || 'N/A' });
+        setStatus('success');
+        setInquiry({ name: '', company: '', role: '', email: '', country: '', message: '' });
+      } else {
+        setStatus('error');
+      }
+    } catch (error) {
+      console.error('Form submission error:', error);
+      setStatus('error');
+    }
   };
 
   return (
@@ -229,6 +248,15 @@ const Home: React.FC = () => {
                   <p className="text-gray-400">Our team will reach out to you within 24 hours.</p>
                   <button onClick={() => setStatus('idle')} className="mt-8 text-purple-400 hover:underline">Send another message</button>
                 </div>
+              ) : status === 'error' ? (
+                <div className="h-full flex flex-col items-center justify-center text-center">
+                  <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mb-6">
+                    <ShieldCheck size={40} className="rotate-180" />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-2 text-red-400">Submission Failed</h3>
+                  <p className="text-gray-400">Something went wrong. Please try again or contact us via email.</p>
+                  <button onClick={() => setStatus('idle')} className="mt-8 text-purple-400 hover:underline">Try again</button>
+                </div>
               ) : (
                 <form onSubmit={handleSubmitInquiry} className="grid sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
@@ -236,6 +264,7 @@ const Home: React.FC = () => {
                     <input 
                       required
                       type="text" 
+                      name="name"
                       value={inquiry.name} 
                       onChange={e => setInquiry({...inquiry, name: e.target.value})}
                       className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition-colors" 
@@ -247,6 +276,7 @@ const Home: React.FC = () => {
                     <input 
                       required
                       type="email" 
+                      name="email"
                       value={inquiry.email} 
                       onChange={e => setInquiry({...inquiry, email: e.target.value})}
                       className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition-colors" 
@@ -257,6 +287,7 @@ const Home: React.FC = () => {
                     <label className="text-xs font-semibold text-gray-500 uppercase">Company</label>
                     <input 
                       type="text" 
+                      name="company"
                       value={inquiry.company} 
                       onChange={e => setInquiry({...inquiry, company: e.target.value})}
                       className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition-colors" 
@@ -267,6 +298,7 @@ const Home: React.FC = () => {
                     <label className="text-xs font-semibold text-gray-500 uppercase">Country</label>
                     <input 
                       type="text" 
+                      name="country"
                       value={inquiry.country} 
                       onChange={e => setInquiry({...inquiry, country: e.target.value})}
                       className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition-colors" 
@@ -277,6 +309,7 @@ const Home: React.FC = () => {
                     <label className="text-xs font-semibold text-gray-500 uppercase">Message</label>
                     <textarea 
                       required
+                      name="message"
                       rows={4} 
                       value={inquiry.message} 
                       onChange={e => setInquiry({...inquiry, message: e.target.value})}
