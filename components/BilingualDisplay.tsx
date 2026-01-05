@@ -17,11 +17,12 @@ const BilingualDisplay: React.FC<Props> = ({
   krClassName = "text-gray-400 font-light",
   as: Component = 'div' 
 }) => {
+  // Use any to bypass IntrinsicAttributes restrictions on dynamic tags when children are present
   const Tag = Component as any;
   return (
-    <Tag className={`flex flex-col gap-3 ${className}`}>
-      <span className={`${enClassName} leading-[1.2] break-keep block`}>{text.en}</span>
-      <span className={`${krClassName} text-[0.8em] md:text-[0.85em] leading-[1.6] break-keep tracking-tight block opacity-80 font-medium`}>{text.kr}</span>
+    <Tag className={`flex flex-col gap-1 ${className}`}>
+      <span className={enClassName}>{text.en}</span>
+      <span className={`text-[0.9em] leading-relaxed ${krClassName}`}>{text.kr}</span>
     </Tag>
   );
 };

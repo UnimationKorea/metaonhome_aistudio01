@@ -9,8 +9,8 @@ import Clients from './pages/Clients';
 import News from './pages/News';
 import PostDetail from './pages/PostDetail';
 import Contact from './pages/Contact';
-import AIChatBot from './components/AIChatBot';
 
+// Scroll to top on route change
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -23,7 +23,7 @@ const App: React.FC = () => {
   return (
     <Router>
       <ScrollToTop />
-      <div className="min-h-screen bg-[#0B0B0F] text-white">
+      <div className="min-h-screen">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
@@ -35,7 +35,6 @@ const App: React.FC = () => {
           <Route path="/admin" element={<Admin />} />
           <Route path="*" element={<Home />} />
         </Routes>
-        <AIChatBot />
       </div>
     </Router>
   );
